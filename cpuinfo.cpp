@@ -62,7 +62,6 @@ int illegal_access_ = 0;
 
 #define _ asm volatile
 
-// TODO: Do it better
 #define CHECK_ILL(val) \
    (void) setjmp(jmp_); \
    if (illegal_access_ == 1) { \
@@ -82,7 +81,7 @@ uint32_t cache_levels() {
 
    uint32_t n = 0;
 
-  // Neither SCTLR no SCTLR_EL0 is not available 
+  // Neither SCTLR no SCTLR_EL0 is available 
   // on assembly level despite of ARMv8-A spec
   // So It's not possible to enable access 
   // to CLIDR_EL1 from EL0
@@ -249,7 +248,9 @@ int main(int argc, char* argv[]) {
     printf("  Cache line size: %x\n", cache_line_size());
     printf("  Cache block size: %x\n", cache_block_size());
     printf("  CPU freq: %.2fGhz\n", cpu_freq());
-    printf("  NEON: yes\n", neon());
+
+    neon();
+    printf("  NEON: yes if no illegal instruction message\n");
 
     return 0;
 }

@@ -174,6 +174,15 @@ double neon() {
    return 1; 
 }
 
+uint32_t modern_atomics() {
+   CHECK_ILL(0);
+   int res = 1;
+   register long x1 __asm__("x1") = 1;
+
+   _ ("stadd x1, %[res]" : [res] "+Q" (res) : "r" (x1));
+
+   return res;
+}
 
 const char *cpu_rev() {
    CHECK_ILL(0);
@@ -235,22 +244,29 @@ void handler(int signo) {
 
 int main(int argc, char* argv[]) {
 
-    struct sigaction sa;
-    sa.sa_handler = (sighandler_t) handler;
-    sa.sa_flags = SA_SIGINFO;
-    sigaction(SIGILL, &sa, NULL);
+   struct sigaction sa;
+   sa.sa_handler = (sighandler_t) handler;
+   sa.sa_flags = SA_SIGINFO;
+   sigaction(SIGILL, &sa, NULL);
 
-    printf("Start testing\n");
-    printf("Smoke test of gcc assembly: %d\n", add(2,3));
-    printf("Cpu info:\n");
-    printf("  CPU: %s\n", cpu_rev());
-    printf("  Cache write granularity: %x\n", cache_wg());
-    printf("  Cache line size: %x\n", cache_line_size());
-    printf("  Cache block size: %x\n", cache_block_size());
-    printf("  CPU freq: %.2fGhz\n", cpu_freq());
+   printf("Start testing\n");
+   printf("Smoke test of gcc assembly: %d\n", add(2,3));
+   printf("Cpu info:\n");
+   printf("  CPU: %s\n", cpu_rev());
+   printf("  Cache write granularity: %x\n", cache_wg());
+   printf("  Cache line size: %x\n", cache_line_size());
+   printf("  Cache block size: %x\n", cache_block_size());
+   printf("  CPU freq: %.2fGhz\n", cpu_freq());
 
-    neon();
-    printf("  NEON: yes if no illegal instruction message\n");
+   printf("  NEON: ");
+   if (neon() > 0) {
+      printf("  yes (no illegal instruction message)\n");
+   }
 
-    return 0;
+   printf("  STADD: ");
+   if ( modern_atomics() > 0) {
+      printf("  yes (no illegal instruction message)\n");
+   }
+
+   return 0;
 }

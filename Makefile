@@ -1,4 +1,4 @@
-CXXFLAGS=-gdwarf-2 -fverbose-asm -fpermissive -I./include 
+CXXFLAGS=-march=armv8.1-a -gdwarf-2 -fverbose-asm -fpermissive -I./include 
 
 SRC=cpuinfo.cpp
 

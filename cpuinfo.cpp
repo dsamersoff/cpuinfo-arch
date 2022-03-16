@@ -160,7 +160,7 @@ double cpu_freq() {
    _ ("mov %[res], x0":[res] "=r" (n));
 
 
-   return (double)n/1000/1000; 
+   return (double)(n*2)/1000/1000; 
 }
 
 // Check for presence of neon coprocessor,
@@ -177,9 +177,10 @@ double neon() {
 uint32_t modern_atomics() {
    CHECK_ILL(0);
    int res = 1;
+   int *res_ptr = &res;
    register long x1 __asm__("x1") = 1;
 
-   _ ("stadd x1, %[res]" : [res] "+Q" (res) : "r" (x1));
+   _ ("stadd x1, %[res]" : [res] "+Q" (res_ptr) : "r" (x1));
 
    return res;
 }

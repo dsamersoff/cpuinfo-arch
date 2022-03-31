@@ -5,6 +5,18 @@
 #include <ucontext.h>
 #include <setjmp.h>
 
+
+// Check for availability of important perf events
+#ifdef CHECK_PERF_EVENTS
+   #include <linux/perf_event.h>    /* Definition of PERF_* constants */
+   #include <linux/hw_breakpoint.h> /* Definition of HW_* constants */
+   #include <sys/syscall.h>         /* Definition of SYS_* constants */
+
+   #include <sys/ioctl.h>
+   #include <unistd.h>
+   #include <string.h>
+#endif
+
 // Borrowed from arm-trusted-firmware project
 //
 #define SCTLR_M_BIT     (1 << 0)
@@ -69,6 +81,52 @@ int illegal_access_ = 0;
      _ ("dmb ish"); \
      return val; \
    }
+
+#ifdef CHECK_PERF_EVENTS
+int strex_do() {
+   CHECK_ILL(0);
+   int res = 1;
+   int *res_ptr = &res;
+   register long x1 __asm__("x1") = 1;
+
+   _ ("ldaxr x1, %[res]; add x1, x1, 1; stlxr w8, x1, %[res]" : [res] "+Q" (res_ptr) : "r" (x1) );
+
+   return res;
+}
+
+long long perf_event_do(uint32_t p_type, uint64_t p_config) {
+   unsigned long flags = PERF_FLAG_FD_CLOEXEC; 
+   int fd = -1;
+   struct perf_event_attr attr;
+   long long count;
+
+   memset(&attr, 0, sizeof(attr));
+   attr.type = p_type;
+   attr.size = sizeof(attr);
+   attr.config = p_config;
+   attr.disabled = 1;
+   attr.exclude_kernel = 1;
+   attr.exclude_hv = 1;
+
+   fd = syscall(__NR_perf_event_open, &attr, 0 /*pid*/, -1 /*cpu*/, -1 /*group_fd*/, flags);
+   if (fd < 0) {
+      return (long long) fd;
+   }
+
+   ioctl(fd, PERF_EVENT_IOC_RESET, 0);
+   ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+ 
+   for (int i = 0; i < 10; ++i) {
+      strex_do();
+   }
+
+   ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
+   read(fd, &count, sizeof(count));
+
+   close(fd);   
+   return count;
+}
+#endif
 
 int add(int i, int j) {
     int res = 0;
@@ -268,6 +326,17 @@ int main(int argc, char* argv[]) {
    if ( modern_atomics() > 0) {
       printf("  yes (no illegal instruction message)\n");
    }
+
+#ifdef CHECK_PERF_EVENTS
+   long long count;
+
+   printf("Measuring performance counters:\n");
+   count = perf_event_do(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
+   printf("PERF: hw_instr_cnt is %lld %s\n", count, (count > 0) ? "Ok" : "not available");
+
+   count = perf_event_do(PERF_TYPE_RAW, 0x6d /*strex_pass_spec */);
+   printf("PERF: strex_pass_spec is %lld %s\n", count, (count > 0) ? "Ok" : "not available");
+#endif
 
    return 0;
 }

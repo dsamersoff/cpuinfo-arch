@@ -232,13 +232,14 @@ double neon() {
    return 1; 
 }
 
-uint32_t modern_atomics() {
-   CHECK_ILL(0);
-   int res = 1;
-   int *res_ptr = &res;
-   register long x1 __asm__("x1") = 1;
 
-   _ ("stadd x1, %[res]" : [res] "+Q" (res_ptr) : "r" (x1));
+uint64_t lse_atomics() {
+   CHECK_ILL(0);
+   uint64_t res = 1;
+   register long x1 __asm__("x1") = (long) &res;
+   register long x2 __asm__("x2") = 3;
+
+   _ ("ldadd x2, x2, [x1]");
 
    return res;
 }
@@ -277,7 +278,7 @@ const char *cpu_rev() {
    } 
 
    if (s == NULL) {
-     sprintf(cpuid,"id. %Xi rev. %X", n, rev);
+     sprintf(cpuid,"id. %X i rev. %X", n, rev);
    }
    else {
      sprintf(cpuid,"%s rev. %X", s, rev);
@@ -293,7 +294,7 @@ void handler(int signo) {
    getcontext(&uc);
 
    void *pc = (char *)(uc.uc_mcontext.pc);
-   printf("Illegal instruction at %p %x\n", pc, *(uint32_t *)pc);
+   printf("Illegal instruction at %p inst: 0x%x\n", pc, *(uint32_t *)pc);
 
    longjmp(jmp_,0);
 
@@ -317,14 +318,17 @@ int main(int argc, char* argv[]) {
    printf("  Cache block size: %x\n", cache_block_size());
    printf("  CPU freq: %.2fGhz\n", cpu_freq());
 
+   int res;
    printf("  NEON: ");
-   if (neon() > 0) {
+   res = neon();
+   if (res > 0) {
       printf("  yes (no illegal instruction message)\n");
    }
 
    printf("  STADD: ");
-   if ( modern_atomics() > 0) {
-      printf("  yes (no illegal instruction message)\n");
+   res = lse_atomics();
+   if (res > 0) {
+      printf("  yes (no illegal instruction message) %d\n", res);
    }
 
 #ifdef CHECK_PERF_EVENTS

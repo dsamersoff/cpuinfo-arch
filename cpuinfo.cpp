@@ -235,13 +235,16 @@ double neon() {
 
 uint64_t lse_atomics() {
    CHECK_ILL(0);
-   uint64_t res = 1;
+   uint64_t res = 3;
    register long x1 __asm__("x1") = (long) &res;
-   register long x2 __asm__("x2") = 3;
+   register long x2 __asm__("x2") = 5;
 
    _ ("ldadd x2, x2, [x1]");
 
-   return res;
+   // Using the same register as Xs and Xt.
+   // may cause Xt to retain its original value on some CPUs
+   // i.e. function returns 5 but not expected 3
+   return x2;
 }
 
 const char *cpu_rev() {
@@ -328,7 +331,10 @@ int main(int argc, char* argv[]) {
    printf("  STADD: ");
    res = lse_atomics();
    if (res > 0) {
-      printf("  yes (no illegal instruction message) %d\n", res);
+      printf("  yes (no illegal instruction message)\n");
+      if (res != 3) {
+        printf("  ldadd Xs, Xt, [Xn] works incorrectly if Xs and Xt are the same\n");
+      }
    }
 
 #ifdef CHECK_PERF_EVENTS

@@ -328,12 +328,12 @@ int main(int argc, char* argv[]) {
       printf("  yes (no illegal instruction message)\n");
    }
 
-   printf("  STADD: ");
+   printf("  LDADD: ");
    res = lse_atomics();
    if (res > 0) {
       printf("  yes (no illegal instruction message)\n");
       if (res != 3) {
-        printf("  ldadd Xs, Xt, [Xn] works incorrectly if Xs and Xt are the same\n");
+        printf("  *****: ldadd Xs, Xt, [Xn] works incorrectly if Xs and Xt are the same\n");
       }
    }
 

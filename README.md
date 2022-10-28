@@ -1,5 +1,6 @@
 # cpuinfo-arch
-Small utility that gather information from arm, aarch64 and riscv cpu.
+A small utility for collecting information from arm, aarch64 and riscv processors.
 
-This utility designed to work with the situation when we can't rely on conventional method and status register bits,
-but need to get the actual information using try-and-see approach.
+This utility is designed to work in a situation where we can't rely on the conventional methods and status register bits, but need to get actual information using the try-and-see approach.
+
+On armv7 and riscv64 processors, only the NEON/VECTOR IP presence is checked.

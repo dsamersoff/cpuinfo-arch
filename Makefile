@@ -1,15 +1,51 @@
-CXXFLAGS=-march=armv8.1-a -gdwarf-2 -fverbose-asm -fpermissive -I./include 
-DEFINES=-DCHECK_PERF_EVENTS
+PROJ:=cpuinfo
+VERSION:=$(shell git log -1 --date=format:"%Y-%m-%d" --format="%ad")
+SUPPORTED_TARGETS:=aarch64 arm riscv64
 
-SRC=cpuinfo.cpp
+# for cross compilation, define CXX
+TARGET:=$(shell $(CXX) -dumpmachine | sed -n -e "s/-.*//p")
 
-all: cpuinfo.lst cpuinfo 
+ifeq ($(filter $(TARGET),$(SUPPORTED_TARGETS)),)
+  $(error Unsupported TARGET: $(TARGET))
+endif
+
+$(info Building for TARGET: $(TARGET))
+
+CXXFLAGS+=--std=c++11 -gdwarf-2 -fverbose-asm -fpermissive
+DEFINES=-DVERSION="\"$(VERSION)\"" -D$(TARGET)
+
+ifneq ($(SYSROOT),)
+  CXXFLAGS+= "--sysroot=$(SYSROOT)"
+endif
+
+SRCS=cpuinfo.cpp cpuinfo-$(TARGET).cpp
+
+ifeq ($(TARGET),aarch64)
+  CXXFLAGS+=-march=armv8.1-a
+  DEFINES+=-DCHECK_PERF_EVENTS
+endif
+
+# ifeq ($(TARGET),riscv64)
+#
+# endif
+
+OBJS:=$(patsubst %.cpp,%.o,$(SRCS))
+
+all: $(PROJ)
+
+lst: cpuinfo.lst
 
 clean:
-	rm -f cpuinfo.lst cpuinfo cpuinfo.o
+	rm -f cpuinfo.lst cpuinfo $(OBJS)
 
-cpuinfo: $(SRC)
-	$(CXX) $(CXXFLAGS) $(DEFINES) -o $@ $< 
+cpuinfo: $(OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $^
 
-cpuinfo.lst: $(SRC)
+cpuinfo.o: cpuinfo.cpp
+	$(CXX) -c $(CXXFLAGS) $(DEFINES) -o $@ $<
+
+cpuinfo-$(TARGET).o: cpuinfo-$(TARGET).cpp
+	$(CXX) -c $(CXXFLAGS) $(DEFINES) -o $@ $<
+
+cpuinfo.lst: cpuinfo-${TARGET}.cpp
 	$(CXX) $(CXXFLAGS) $(DEFINES) -c -Wa,-adhln $< > $@

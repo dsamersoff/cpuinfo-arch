@@ -13,7 +13,7 @@ int vector_ip() {
 
    register char *dst __asm__ ("a0") = dest_buf; 
    const register char *src __asm__ ("a1") = src_text; 
-   register int len __asm__ ("a1") = src_len; 
+   register int len __asm__ ("a2") = src_len; 
    register char *dst_copy __asm__ ("a3") = dest_buf; 
 
    _ (

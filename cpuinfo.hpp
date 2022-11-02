@@ -5,7 +5,9 @@
 #include <stdint.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ucontext.h>
+
 #include <setjmp.h>
 
 // Check for availability of important perf events

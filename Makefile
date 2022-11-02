@@ -25,9 +25,9 @@ ifeq ($(TARGET),aarch64)
   DEFINES+=-DCHECK_PERF_EVENTS
 endif
 
-# ifeq ($(TARGET),riscv64)
-#
-# endif
+ifeq ($(TARGET),riscv64)
+  CXXFLAGS+=-march=rv64gv
+endif
 
 OBJS:=$(patsubst %.cpp,%.o,$(SRCS))
 

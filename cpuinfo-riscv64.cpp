@@ -7,30 +7,11 @@ extern int illegal_access_;
 int vector_ip() {
    CHECK_ILL(0);
 
-   const register char src_text[] = "Vectorized memcpy test on not so long string";
-   const int src_len = sizeof(src_text);
-   char dest_buf[src_len];
+   const int csr = 0x20;
+   register unsigned long v;
+   _ ("csrr %0, %1" : "=r"(v) : "i" (csr));
 
-   register char *dst __asm__ ("a0") = dest_buf; 
-   const register char *src __asm__ ("a1") = src_text; 
-   register int len __asm__ ("a2") = src_len; 
-   register char *dst_copy __asm__ ("a3") = dest_buf; 
-
-   _ (
-     "loop:"
-     "vsetvli t0, a2, e8, m8, ta, ma;"
-     "vle8.v v0, (a1);"
-     "add a1, a1, t0;"
-     "sub a2, a2, t0;"
-     "vse8.v v0, (a3);"
-     "add a3, a3, t0;"
-     "bnez a2, loop;" 
-    : // no output
-    : // no input
-    : "t0" 
-    );
-
-   return (memcmp(dest_buf, src_text, src_len) == 0) ? 1 : 2;
+   return 1;
 }
 
 int add(int i, int j) {
